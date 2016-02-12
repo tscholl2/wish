@@ -8,7 +8,7 @@ import (
 
 type room struct {
 	// lock for map access
-	sync.RWMutex
+	sync.Mutex
 
 	// Registered connections.
 	connections map[*connection]bool
@@ -32,13 +32,13 @@ func (r *room) run() {
 }
 
 func (r *room) send(msgType int, msg []byte) {
-	r.RLock()
+	r.Lock()
 	for c := range r.connections {
-		if err := c.send(websocket.TextMessage, msg); err != nil {
+		if err := c.send(msgType, msg); err != nil {
 			c.close()
 		}
 	}
-	r.RUnlock()
+	r.Unlock()
 }
 
 func newRoom(name string) *room {

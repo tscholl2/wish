@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type roomRequest struct {
 	c    *connection
 	name string
@@ -24,7 +22,6 @@ func (H *hotel) run() {
 	for {
 		select {
 		case req := <-H.enter:
-			fmt.Printf("adding %p to %s\n", req.c, req.name)
 			if _, ok := H.rooms[req.name]; !ok {
 				H.rooms[req.name] = newRoom(req.name)
 			}

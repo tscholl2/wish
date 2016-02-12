@@ -20,7 +20,6 @@ func main() {
 func wsHandler() http.HandlerFunc {
 	H := newHotel()
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("got ws req at %s\n", r.URL.Path)
 		var name string
 		if p := strings.Split(r.URL.Path, "/"); len(p) > 2 && p[2] != "" {
 			name = p[2]
