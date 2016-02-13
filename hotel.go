@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type roomRequest struct {
 	c    *connection
 	name string
@@ -32,6 +34,7 @@ func (H *hotel) run() {
 			go func(req roomRequest) {
 				for {
 					_, msg, err := req.c.read()
+					fmt.Printf("got msg from %p, size = %d\n", req.c, len(msg))
 					if err != nil {
 						H.leave <- req
 						break

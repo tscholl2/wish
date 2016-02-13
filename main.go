@@ -11,7 +11,7 @@ import (
 //go:generate esc -o static.go -prefix static static
 func main() {
 	// FS() is created by `esc` and returns a http.Filesystem.
-	http.Handle("/", http.FileServer(FS(false)))
+	http.Handle("/", http.FileServer(FS(true)))
 	http.HandleFunc("/ws/", wsHandler())
 	fmt.Println("serving")
 	log.Fatal(http.ListenAndServe(":8080", nil))
