@@ -32,6 +32,7 @@ window.onload = function() {
          );
          conn.send(JSON.stringify({
             id: CLIENT_ID,
+            d: new Date().toJSON(),
             t: "p",
             p: patches,
          }));
