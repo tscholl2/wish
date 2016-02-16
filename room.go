@@ -1,10 +1,6 @@
 package main
 
-import (
-	"sync"
-
-	"github.com/gorilla/websocket"
-)
+import "sync"
 
 type room struct {
 	// lock for map access
@@ -14,7 +10,7 @@ type room struct {
 	connections map[*connection]bool
 
 	// Inbound messages from the connections.
-	inbox chan []byte
+	inbox chan *message
 
 	// text storage
 	text *text
@@ -27,17 +23,21 @@ func (r *room) run() {
 	for {
 		select {
 		case msg := <-r.inbox:
-			r.send(websocket.TextMessage, msg)
+			switch msg.Payload.(type) {
+			case patchPayload:
+				r.text.update(msg.Payload.(patchPayload).Patches)
+				r.send(msg)
+			}
 		case <-r.done:
 			break
 		}
 	}
 }
 
-func (r *room) send(msgType int, msg []byte) {
+func (r *room) send(msg *message) {
 	r.Lock()
 	for c := range r.connections {
-		if err := c.send(msgType, msg); err != nil {
+		if err := c.send(msg); err != nil {
 			c.close()
 		}
 	}
@@ -47,7 +47,7 @@ func (r *room) send(msgType int, msg []byte) {
 func newRoom(name string) *room {
 	r := &room{
 		connections: make(map[*connection]bool),
-		inbox:       make(chan []byte),
+		inbox:       make(chan *message),
 		done:        make(chan struct{}),
 	}
 	r.text = newText()

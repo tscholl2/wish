@@ -9,8 +9,9 @@ import (
 )
 
 type message struct {
-	Type    string      `json:"t"`
-	Payload interface{} `json:"p"`
+	Type      string      `json:"t"`
+	TimeStamp time.Time   `json:"d"`
+	Payload   interface{} `json:"p"`
 }
 
 func (m *message) UnmarshalJSON(data []byte) (err error) {
@@ -24,9 +25,9 @@ func (m *message) UnmarshalJSON(data []byte) (err error) {
 	m.Type = raw.T
 	switch raw.T {
 	case "p":
-		m.Payload = patchPayload{}
+		m.Payload = new(patchPayload)
 	case "s":
-		m.Payload = snapshotPayload{}
+		m.Payload = new(snapshotPayload)
 	default:
 		return fmt.Errorf("unknown message type: %+v", m)
 	}
@@ -34,12 +35,20 @@ func (m *message) UnmarshalJSON(data []byte) (err error) {
 }
 
 type patchPayload struct {
-	Author    string                 `json:"a"`
-	TimeStamp time.Time              `json:"d"`
-	Patches   []diffmatchpatch.Patch `json:"p"`
+	Author  string                 `json:"a"`
+	Patches []diffmatchpatch.Patch `json:"p"`
 }
 
 type snapshotPayload struct {
-	TimeStamp time.Time `json:"d"`
-	Text      string    `json:"t"`
+	Text string `json:"t"`
+}
+
+func newSnapshotMessage(s string) *message {
+	return &message{
+		Type:      "s",
+		TimeStamp: time.Now(),
+		Payload: snapshotPayload{
+			Text: s,
+		},
+	}
 }

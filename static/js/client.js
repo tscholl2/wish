@@ -13,16 +13,17 @@ conn.onclose = function(e) {
 }
 conn.onmessage = function(e) {
    var msg = JSON.parse(e.data);
+   console.log("new msg", msg);
    switch (msg.t) {
       case "p":
-         document.dispatchEvent(new Event("newPatch",{detail:{
+         document.dispatchEvent(new CustomEvent("newPatch",{detail:{
             patches: msg.p.p,
             author: msg.p.a,
          }}));
          break;
-      case "t":
-         document.dispatchEvent(new Event("newSnapshot",{detail:{
-            text: msg.p.p.t,
+      case "s":
+         document.dispatchEvent(new CustomEvent("newSnapshot",{detail:{
+            text: msg.p.t,
          }}));
          break;
       default:
@@ -31,7 +32,7 @@ conn.onmessage = function(e) {
 };
 
 document.addEventListener("newSnapshot", function(event){
-   newText = event.details.text;
+   newText = event.detail.text;
    if (snapShots.push(newText) > 10) {
       snapShots = snapShots.slice(-10);
    }
@@ -39,8 +40,8 @@ document.addEventListener("newSnapshot", function(event){
 });
 
 document.addEventListener("newPatch", function(event){
-   patches = event.details.patches;
-   author = event.details.a;
+   patches = event.detail.patches;
+   author = event.detail.a;
    var newText = dmp.patch_apply(patches, snapShots[snapShots.length-1])[0];
    if (snapShots.push(newText) > 10) {
       snapShots = snapShots.slice(-10);
@@ -64,9 +65,9 @@ window.onload = function() {
          );
          conn.send(JSON.stringify({
             t: "p",
+            d: new Date().toJSON(),
             p: {
                a: CLIENT_AUTHOR,
-               d: new Date().toJSON(),
                p: patches,
             },
          }));

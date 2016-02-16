@@ -28,13 +28,14 @@ func (H *hotel) run() {
 				H.rooms[req.name] = newRoom(req.name)
 			}
 			r := H.rooms[req.name]
+			req.c.send(newSnapshotMessage(r.text.snapshot))
 			r.Lock()
 			r.connections[req.c] = true
 			r.Unlock()
 			go func(req roomRequest) {
 				for {
-					_, msg, err := req.c.read()
-					fmt.Printf("got msg from %p, size = %d\n", req.c, len(msg))
+					msg, err := req.c.read()
+					fmt.Printf("got msg from %p, size ~ %d\n", req.c, len(fmt.Sprintf("%+v", msg)))
 					if err != nil {
 						H.leave <- req
 						break

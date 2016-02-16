@@ -29,15 +29,16 @@ func newConnection(w http.ResponseWriter, r *http.Request) (*connection, error) 
 }
 
 // warning: make sure only one goroutine calls this at a time
-func (c *connection) read() (int, []byte, error) {
-	return c.ws.ReadMessage()
+func (c *connection) read() (*message, error) {
+	m := new(message)
+	return m, c.ws.ReadJSON(m)
 }
 
 // warning: make sure only one goroutine calls this at a time
 // also if there is an error, the source says it immediately returns
 // that error on subsequent calls, so it's safe
-func (c *connection) send(msgType int, msg []byte) error {
-	return c.ws.WriteMessage(msgType, msg)
+func (c *connection) send(m *message) error {
+	return c.ws.WriteJSON(m)
 }
 
 // anyone can call this whenever
