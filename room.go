@@ -16,6 +16,9 @@ type room struct {
 	// Inbound messages from the connections.
 	inbox chan []byte
 
+	// text storage
+	text *text
+
 	// done signal
 	done chan struct{}
 }
@@ -47,6 +50,7 @@ func newRoom(name string) *room {
 		inbox:       make(chan []byte),
 		done:        make(chan struct{}),
 	}
+	r.text = newText()
 	go r.run()
 	return r
 }

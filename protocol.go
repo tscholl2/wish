@@ -34,7 +34,7 @@ func (m *message) UnmarshalJSON(data []byte) (err error) {
 }
 
 type patchPayload struct {
-	Client    string                 `json:"id"`
+	Author    string                 `json:"a"`
 	TimeStamp time.Time              `json:"d"`
 	Patches   []diffmatchpatch.Patch `json:"p"`
 }
