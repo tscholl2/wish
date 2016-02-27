@@ -9,6 +9,7 @@ import (
 )
 
 //go:generate esc -o static.go -prefix static static
+// remember to run `go get github.com/mjibson/esc`
 func main() {
 	// FS() is created by `esc` and returns a http.Filesystem.
 	http.Handle("/", http.FileServer(FS(true)))
@@ -25,7 +26,7 @@ func wsHandler() http.HandlerFunc {
 			name = p[2]
 		} else {
 			// TODO: autogenerate names
-			name = fmt.Sprintf("%d", rand.Intn(2))
+			name = fmt.Sprintf("%d", rand.Intn(1))
 		}
 		c, err := newConnection(w, r)
 		if err != nil {
