@@ -20,7 +20,6 @@ func main() {
 
 func wsHandler() http.HandlerFunc {
 	H := newHotel()
-    fmt.Println("new hotel!")
 	return func(w http.ResponseWriter, r *http.Request) {
 		var name string
 		if p := strings.Split(r.URL.Path, "/"); len(p) > 2 && p[2] != "" {
