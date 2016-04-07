@@ -50,7 +50,7 @@ func newRoom(name string) *room {
 		inbox:       make(chan *message),
 		done:        make(chan struct{}),
 	}
-	r.text = newText()
+	r.text = new(text)
 	go r.run()
 	return r
 }
