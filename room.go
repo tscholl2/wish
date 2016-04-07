@@ -1,6 +1,9 @@
 package main
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 type room struct {
 	// lock for map access
@@ -55,13 +58,16 @@ func (r *room) send(msg *message) {
 }
 
 func (r *room) add(c *connection) {
+	fmt.Printf("new connection! %p\n", c)
 	r.Lock()
 	r.connections[c] = struct{}{}
-	r.send(newSnapshotMessage(r.text.snapshot))
+	c.send(newSnapshotMessage(r.text.snapshot))
 	go func(c *connection, r *room) {
 		for {
 			msg, err := c.read()
+			fmt.Printf("new msg from %p\n%s\n", c, msg)
 			if err != nil {
+				fmt.Printf("err msg from %p, removing\n", c)
 				r.remove(c)
 				break
 			} else {
@@ -73,6 +79,7 @@ func (r *room) add(c *connection) {
 }
 
 func (r *room) remove(c *connection) {
+	fmt.Printf("remove connection! %p\n", c)
 	r.Lock()
 	delete(r.connections, c)
 	r.Unlock()
