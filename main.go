@@ -19,7 +19,7 @@ func main() {
 }
 
 func wsHandler() http.HandlerFunc {
-	H := newHotel()
+	H := new(hotel).run()
 	return func(w http.ResponseWriter, r *http.Request) {
 		var name string
 		if p := strings.Split(r.URL.Path, "/"); len(p) > 2 && p[2] != "" {

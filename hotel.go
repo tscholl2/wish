@@ -1,5 +1,7 @@
 package main
 
+import "time"
+
 type roomRequest struct {
 	c    *connection
 	name string
@@ -12,55 +14,34 @@ type hotel struct {
 	// Put a connection into  a room
 	// and create one if it doesn't exist
 	enter chan roomRequest
-
-	// Remove a connection from a room
-	// and deletes the room if no one is left in it
-	leave chan roomRequest
 }
 
-func (H *hotel) run() {
-	for {
-		select {
-		case req := <-H.enter:
-			if _, ok := H.rooms[req.name]; !ok {
-				H.rooms[req.name] = newRoom(req.name)
-			}
-			r := H.rooms[req.name]
-			req.c.send(newSnapshotMessage(r.text.snapshot))
-			r.Lock()
-			r.connections[req.c] = true
-			r.Unlock()
-			go func(req roomRequest) {
-				for {
-					msg, err := req.c.read()
-					if err != nil {
-						H.leave <- req
-						break
-					} else {
-						r.inbox <- msg
-					}
+func (H *hotel) run() *hotel {
+	if H.rooms != nil || H.enter != nil {
+		panic("Hotel can only run once")
+	}
+	H.rooms = make(map[string]*room)
+	H.enter = make(chan roomRequest)
+	go func(H *hotel) {
+		for {
+			select {
+			case req := <-H.enter:
+				if _, ok := H.rooms[req.name]; !ok {
+					H.rooms[req.name] = new(room).run()
 				}
-			}(req)
-		case req := <-H.leave:
-			r := H.rooms[req.name]
-			r.Lock()
-			delete(r.connections, req.c)
-			r.Unlock()
-			if len(r.connections) == 0 {
-				delete(H.rooms, req.name)
-				r.done <- struct{}{}
+				r := H.rooms[req.name]
+				r.add(req.c)
+			case <-time.Tick(10 * time.Second):
+				for name, r := range H.rooms {
+					r.Lock()
+					if len(r.connections) == 0 {
+						delete(H.rooms, name)
+					}
+					r.Unlock()
+					r.done <- struct{}{}
+				}
 			}
-			req.c.close()
 		}
-	}
-}
-
-func newHotel() *hotel {
-	H := &hotel{
-		rooms: make(map[string]*room),
-		enter: make(chan roomRequest),
-		leave: make(chan roomRequest),
-	}
-	go H.run()
+	}(H)
 	return H
 }
