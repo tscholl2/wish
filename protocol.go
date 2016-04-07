@@ -17,6 +17,7 @@ type message struct {
 func (m *message) UnmarshalJSON(data []byte) (err error) {
 	raw := &struct {
 		T string          `json:"t"`
+		D time.Time       `json:"d"`
 		P json.RawMessage `json:"p"`
 	}{}
 	if err = json.Unmarshal(data, raw); err != nil {

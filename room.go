@@ -34,9 +34,12 @@ func (r *room) run() *room {
 		for {
 			select {
 			case msg := <-r.inbox:
+				fmt.Println("room got a msg!")
 				switch msg.Payload.(type) {
-				case patchPayload:
-					r.text.update(msg.Payload.(patchPayload).Patches)
+				case *patchPayload:
+					fmt.Println("its a patch!")
+					r.text.update(msg.Payload.(*patchPayload).Patches)
+					fmt.Printf("new text = \n%s\n", r.text.snapshot)
 					r.send(msg)
 				}
 			case <-r.done:
