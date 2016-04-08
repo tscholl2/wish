@@ -65,6 +65,7 @@ window.onload = function() {
         snapShots[snapShots.length-1],
         document.getElementById("input").value
       );
+      console.log("sending patches: ", patches);
       conn.send(JSON.stringify({
         t: "p",
         d: new Date().toJSON(),

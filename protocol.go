@@ -15,6 +15,7 @@ type message struct {
 }
 
 func (m *message) UnmarshalJSON(data []byte) (err error) {
+	fmt.Printf("unmashaling json \n%s\n", data)
 	raw := &struct {
 		T string          `json:"t"`
 		D time.Time       `json:"d"`
@@ -32,6 +33,8 @@ func (m *message) UnmarshalJSON(data []byte) (err error) {
 	default:
 		return fmt.Errorf("unknown message type: %+v", m)
 	}
+	j, _ := json.Marshal(m.Payload)
+	fmt.Printf("payload is json \n%s\n", j)
 	return json.Unmarshal(raw.P, m.Payload)
 }
 
