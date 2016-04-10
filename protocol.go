@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 type message struct {
@@ -15,7 +13,6 @@ type message struct {
 }
 
 func (m *message) UnmarshalJSON(data []byte) (err error) {
-	fmt.Printf("unmashaling json \n%s\n", data)
 	raw := &struct {
 		T string          `json:"t"`
 		D time.Time       `json:"d"`
@@ -25,6 +22,7 @@ func (m *message) UnmarshalJSON(data []byte) (err error) {
 		return
 	}
 	m.Type = raw.T
+	m.TimeStamp = raw.D
 	switch raw.T {
 	case "p":
 		m.Payload = new(patchPayload)
@@ -33,14 +31,18 @@ func (m *message) UnmarshalJSON(data []byte) (err error) {
 	default:
 		return fmt.Errorf("unknown message type: %+v", m)
 	}
-	j, _ := json.Marshal(m.Payload)
-	fmt.Printf("payload is json \n%s\n", j)
 	return json.Unmarshal(raw.P, m.Payload)
 }
 
 type patchPayload struct {
-	Author  string                 `json:"a"`
-	Patches []diffmatchpatch.Patch `json:"p"`
+	Author  string  `json:"a"`
+	Patches []patch `json:"p"`
+}
+
+type patch struct {
+	Start int    `json:"1"`
+	End   int    `json:"2"`
+	Text  string `json:"s"`
 }
 
 type snapshotPayload struct {

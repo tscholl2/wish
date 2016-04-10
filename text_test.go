@@ -3,15 +3,17 @@ package main
 import (
 	"testing"
 
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestUpdate(t *testing.T) {
-	txt := new(text)
-	for i := 0; i < 100; i++ {
-		txt.update([]diffmatchpatch.Patch{diffmatchpatch.Patch{}})
+	n := note{"hello world"}
+	arr := []patch{
+		patch{0, 1, "a"},
+		patch{1, 2, "b"},
 	}
-	assert.Equal(t, 10, len(txt.patches))
-	assert.Equal(t, "", txt.snapshot)
+	n.update(arr)
+	assert.Equal(t, "abllo world", n.text)
+	n.update([]patch{})
+	assert.Equal(t, "abllo world", n.text)
 }

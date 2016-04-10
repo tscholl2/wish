@@ -1,22 +1,17 @@
 package main
 
-import "github.com/sergi/go-diff/diffmatchpatch"
+import "fmt"
 
-type text struct {
-	dmp      *diffmatchpatch.DiffMatchPatch
-	snapshot string
-	patches  []diffmatchpatch.Patch
+type note struct {
+	text string
 }
 
-func (t *text) update(patches []diffmatchpatch.Patch) error {
-	if t.dmp == nil {
-		t.dmp = diffmatchpatch.New()
+func (n *note) update(patches []patch) (err error) {
+	for _, p := range patches {
+		if p.Start < 0 || p.End > len(n.text) {
+			return fmt.Errorf("note: out of bounds update")
+		}
+		n.text = n.text[:p.Start] + p.Text + n.text[p.End:]
 	}
-	s, _ := t.dmp.PatchApply(patches, t.snapshot) // TODO: error handling?
-	t.patches = append(t.patches, patches...)
-	if len(t.patches) > 10 {
-		t.patches = t.patches[len(t.patches)-10 : len(t.patches)]
-	}
-	t.snapshot = s
-	return nil
+	return
 }

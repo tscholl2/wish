@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"sync"
-)
+import "sync"
 
 type room struct {
 	// lock for map access
@@ -16,30 +13,27 @@ type room struct {
 	inbox chan *message
 
 	// text storage
-	text *text
+	note *note
 
 	// done signal
 	done chan struct{}
 }
 
 func (r *room) run() *room {
-	if r.connections != nil || r.inbox != nil || r.done != nil || r.text != nil {
+	if r.connections != nil || r.inbox != nil || r.done != nil || r.note != nil {
 		panic("rooms can only run once")
 	}
 	r.connections = make(map[*connection]struct{})
 	r.inbox = make(chan *message)
 	r.done = make(chan struct{})
-	r.text = new(text)
+	r.note = new(note)
 	go func(r *room) {
 		for {
 			select {
 			case msg := <-r.inbox:
-				fmt.Println("room got a msg!")
 				switch msg.Payload.(type) {
 				case *patchPayload:
-					fmt.Println("its a patch!")
-					r.text.update(msg.Payload.(*patchPayload).Patches)
-					fmt.Printf("new text = \n%s\n", r.text.snapshot)
+					r.note.update(msg.Payload.(*patchPayload).Patches)
 					r.send(msg)
 				}
 			case <-r.done:
@@ -61,16 +55,13 @@ func (r *room) send(msg *message) {
 }
 
 func (r *room) add(c *connection) {
-	fmt.Printf("new connection! %p\n", c)
 	r.Lock()
 	r.connections[c] = struct{}{}
-	c.send(newSnapshotMessage(r.text.snapshot))
+	c.send(newSnapshotMessage(r.note.text))
 	go func(c *connection, r *room) {
 		for {
 			msg, err := c.read()
-			fmt.Printf("new msg from %p\n%s\n", c, msg)
 			if err != nil {
-				fmt.Printf("err msg from %p, removing\n", c)
 				r.remove(c)
 				break
 			} else {
@@ -82,7 +73,6 @@ func (r *room) add(c *connection) {
 }
 
 func (r *room) remove(c *connection) {
-	fmt.Printf("remove connection! %p\n", c)
 	r.Lock()
 	delete(r.connections, c)
 	r.Unlock()

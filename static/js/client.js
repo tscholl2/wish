@@ -1,7 +1,5 @@
-CLIENT_AUTHOR = Date.now() +""+ Math.random()
+var CLIENT_AUTHOR = Date.now() +""+ Math.random()
 
-var snapShots = [""];
-var dmp = new diff_match_patch();
 var conn = new WebSocket(
   "ws://" + window.location.hostname + ":" + window.location.port + "/ws/"
 );
@@ -12,68 +10,72 @@ conn.onclose = function(e) {
   console.log("socket closed");
 }
 conn.onmessage = function(e) {
- var msg = JSON.parse(e.data);
- console.log("new msg", msg);
- switch (msg.t) {
-  case "p":
-   document.dispatchEvent(new CustomEvent("newPatch",{detail:{
-    patches: msg.p.p,
-    author: msg.p.a,
-   }}));
-   break;
-  case "s":
-    document.dispatchEvent(new CustomEvent("newSnapshot",{detail:{
-      text: msg.p.t,
-    }}));
-    break;
-  default:
-    console.log("unknown message type", msg);
- }
+  var msg = JSON.parse(e.data);
+  console.log("new msg", msg);
+  switch (msg.t) {
+    case "p":
+      document.dispatchEvent(new CustomEvent("newPatch",{detail:{
+        patches: msg.p.p,
+        author: msg.p.a,
+      }}));
+      break;
+    case "s":
+      document.dispatchEvent(new CustomEvent("newSnapshot",{detail:{
+        text: msg.p.t,
+        }}));
+      break;
+    default:
+      console.log("unknown message type", msg);
+  }
 };
 
 document.addEventListener("newSnapshot", function(event){
-  console.log("new snapshot", event);
-  newText = event.detail.text;
-  if (snapShots.push(newText) > 10) {
-    snapShots = snapShots.slice(-10);
-  }
-  document.getElementById("input").value = newText;
+  document.getElementById("input").value = event.detail.text;;
 });
 
 document.addEventListener("newPatch", function(event){
-  console.log("new patch", event);
-  patches = event.detail.patches;
-  author = event.detail.a;
-  var newText = dmp.patch_apply(patches, snapShots[snapShots.length-1])[0];
-  if (snapShots.push(newText) > 10) {
-    snapShots = snapShots.slice(-10);
-  }
-  if (author != CLIENT_AUTHOR) {
-    document.getElementById("input").value = newText;
+  var patches = event.detail.patches;
+  var author = event.detail.a;
+  for (var i = 0; i < patches.length; i++) {
+    var p = patches[i];
+    document.getElementById("input").value =
+      document.getElementById("input").value.substr(0,p["1"])
+      + p["s"] +
+      document.getElementById("input").value.substr(p["2"]);
   }
 });
 
-var timeoutHandle;
+var patches = [];
+sendPatches = function() {
+  if (patches.length === 0) {
+    return
+  }
+  patches.reverse();
+  conn.send(JSON.stringify({
+    t: "p",
+    d: new Date().toJSON(),
+    p: {a: CLIENT_AUTHOR, p: patches},
+  }));
+  patches = [];
+};
+
 window.onload = function() {
-  document.getElementById("input").onkeydown = function(event) {
+  var input = document.getElementById("input");
+  var timeoutHandle;
+  input.onkeydown = function(event) {
+    if (event.keyCode === 8) { // Backspace
+      patches.push({"1":input.selectionStart,"2":input.selectionEnd,"s":""});
+      event.preventDefault();
+    }
     window.clearTimeout(timeoutHandle);
-    timeoutHandle = window.setTimeout(function(){
-      if (snapShots[snapShots.length-1] == document.getElementById("input").value) {
-        return
-      }
-      var patches = dmp.patch_make(
-        snapShots[snapShots.length-1],
-        document.getElementById("input").value
-      );
-      console.log("sending patches: ", patches);
-      conn.send(JSON.stringify({
-        t: "p",
-        d: new Date().toJSON(),
-        p: {
-          a: CLIENT_AUTHOR,
-          p: patches,
-        },
-      }));
-    }, 500);
+    timeoutHandle = window.setTimeout(sendPatches,500);
+  }
+  input.onkeypress = function(event) {
+    var char = String.fromCharCode(event.which || event.keyCode || event.charCode);
+    if (char === 0) { return }
+    patches.push({"1":input.selectionStart,"2":input.selectionEnd,"s":char});
+    event.preventDefault();
+    window.clearTimeout(timeoutHandle);
+    timeoutHandle = window.setTimeout(sendPatches,500);
   };
 };

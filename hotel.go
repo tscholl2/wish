@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"time"
-)
+import "time"
 
 type roomRequest struct {
 	c    *connection
@@ -31,7 +28,6 @@ func (H *hotel) run() *hotel {
 			case req := <-H.enter:
 				if _, ok := H.rooms[req.name]; !ok {
 					H.rooms[req.name] = new(room).run()
-					fmt.Printf("new room: %s\n", req.name)
 				}
 				r := H.rooms[req.name]
 				r.add(req.c)
@@ -40,7 +36,6 @@ func (H *hotel) run() *hotel {
 					r.Lock()
 					if len(r.connections) == 0 {
 						delete(H.rooms, name)
-						fmt.Printf("kill room: %s\n", name)
 					}
 					r.Unlock()
 					r.done <- struct{}{}
