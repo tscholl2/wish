@@ -80,6 +80,8 @@ window.onload = function() {
         patches.push({"1":input.selectionStart-1,"2":input.selectionEnd,"s":""});
       else
         patches.push({"1":input.selectionStart,"2":input.selectionEnd,"s":""});
+      input.selectionStart = Math.min(input.selectionStart,input.selectionEnd);
+      input.selectionEnd = input.selectionStart;
       event.preventDefault();
     }
     window.clearTimeout(timeoutHandle);
