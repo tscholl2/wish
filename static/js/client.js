@@ -35,13 +35,27 @@ document.addEventListener("newSnapshot", function(event){
 
 document.addEventListener("newPatch", function(event){
   var patches = event.detail.patches;
-  var author = event.detail.a;
+  var input = document.getElementById("input");
+  var cursorStart = input.selectionStart;
+  var cursorEnd = input.selectionEnd;
   for (var i = 0; i < patches.length; i++) {
     var p = patches[i];
     document.getElementById("input").value =
       document.getElementById("input").value.substr(0,p["1"])
       + p["s"] +
       document.getElementById("input").value.substr(p["2"]);
+    console.log("cusor position: ", cursorStart, cursorEnd);
+    console.log("patch position: ", p["1"], p["2"]);
+    if (Math.min(p["1"],p["2"]) <= Math.min(cursorStart,cursorEnd)) {
+      input.selectionStart = cursorStart + Math.abs(p["2"] - p["1"]) + p["s"].length;
+      input.selectionEnd = cursorEnd +  Math.abs(p["2"] - p["1"]) + p["s"].length;
+    } else if (Math.min(p["1"],p["2"]) >= Math.max(cursorStart,cursorEnd)) {
+      input.selectionStart = cursorStart;
+      input.selectionEnd = cursorEnd;
+    } else {
+      input.selectionStart = Math.max(p["1"],p["2"]);
+      input.selectionEnd = input.selectionStart;
+    }
   }
 });
 
@@ -64,7 +78,10 @@ window.onload = function() {
   var timeoutHandle;
   input.onkeydown = function(event) {
     if (event.keyCode === 8) { // Backspace
-      patches.push({"1":input.selectionStart,"2":input.selectionEnd,"s":""});
+      if (input.selectionStart === input.selectionEnd)
+        patches.push({"1":input.selectionStart-1,"2":input.selectionEnd,"s":""});
+      else
+        patches.push({"1":input.selectionStart,"2":input.selectionEnd,"s":""});
       event.preventDefault();
     }
     window.clearTimeout(timeoutHandle);
@@ -73,7 +90,12 @@ window.onload = function() {
   input.onkeypress = function(event) {
     var char = String.fromCharCode(event.which || event.keyCode || event.charCode);
     if (char === 0) { return }
-    patches.push({"1":input.selectionStart,"2":input.selectionEnd,"s":char});
+    if (patches.length > 0
+        && patches[patches.length-1]["1"] === input.selectionStart
+        && patches[patches.length-1]["2"] === input.selectionEnd)
+        patches[patches.length-1]["s"] +=char;
+    else
+      patches.push({"1":input.selectionStart,"2":input.selectionEnd,"s":char});
     event.preventDefault();
     window.clearTimeout(timeoutHandle);
     timeoutHandle = window.setTimeout(sendPatches,500);
