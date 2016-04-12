@@ -44,8 +44,6 @@ document.addEventListener("newPatch", function(event){
       document.getElementById("input").value.substr(0,p["1"])
       + p["s"] +
       document.getElementById("input").value.substr(p["2"]);
-    console.log("cusor position: ", cursorStart, cursorEnd);
-    console.log("patch position: ", p["1"], p["2"]);
     if (Math.min(p["1"],p["2"]) <= Math.min(cursorStart,cursorEnd)) {
       input.selectionStart = cursorStart + Math.abs(p["2"] - p["1"]) + p["s"].length;
       input.selectionEnd = cursorEnd +  Math.abs(p["2"] - p["1"]) + p["s"].length;
