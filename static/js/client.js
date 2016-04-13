@@ -44,14 +44,16 @@ document.addEventListener("newPatch", function(event){
       document.getElementById("input").value.substr(0,p["1"])
       + p["s"] +
       document.getElementById("input").value.substr(p["2"]);
-    if (Math.min(p["1"],p["2"]) <= Math.min(cursorStart,cursorEnd)) {
-      input.selectionStart = cursorStart + Math.abs(p["2"] - p["1"]) + p["s"].length;
-      input.selectionEnd = cursorEnd +  Math.abs(p["2"] - p["1"]) + p["s"].length;
-    } else if (Math.min(p["1"],p["2"]) >= Math.max(cursorStart,cursorEnd)) {
+    console.log("patch at ",p["1"],p["2"]);
+    console.log("cursor at ",cursorStart,cursorEnd);
+    if (Math.max(p["1"],p["2"]) < Math.min(cursorStart,cursorEnd)) {
+      input.selectionStart = cursorStart - Math.abs(p["2"] - p["1"]) + p["s"].length;
+      input.selectionEnd = cursorEnd -  Math.abs(p["2"] - p["1"]) + p["s"].length;
+    } else if (Math.min(p["1"],p["2"]) > Math.max(cursorStart,cursorEnd)) {
       input.selectionStart = cursorStart;
       input.selectionEnd = cursorEnd;
     } else {
-      input.selectionStart = Math.max(p["1"],p["2"]);
+      input.selectionStart = Math.min(p["1"],p["2"]);
       input.selectionEnd = input.selectionStart;
     }
   }
@@ -62,7 +64,22 @@ sendPatches = function() {
   if (patches.length === 0) {
     return
   }
-  patches.reverse();
+  /*
+  console.log("about to send patches", patches[0],patches[1]);
+  for (var i = 0; i < patches.length; i++) {
+    var p = patches[i];
+    for (var j = 0; j < i; j++) {
+      var q = patches[j];
+      if (Math.min(q["1"],q["2"]) > Math.max(p["1"],p["2"]))
+        continue
+      var diff = Math.abs(q["1"] - q["2"]) - q["s"].length;
+      console.log("diff = ",diff);
+      p["1"] = Math.max(p["1"] - diff,0);
+      p["2"] = Math.max(p["2"] - diff,0);
+    }
+  }
+  console.log("new patches", patches[0],patches[1]);
+  */
   conn.send(JSON.stringify({
     t: "p",
     d: new Date().toJSON(),
@@ -80,10 +97,10 @@ window.onload = function() {
         patches.push({"1":input.selectionStart-1,"2":input.selectionEnd,"s":""});
       else
         patches.push({"1":input.selectionStart,"2":input.selectionEnd,"s":""});
-      input.selectionStart = Math.min(input.selectionStart,input.selectionEnd);
-      input.selectionEnd = input.selectionStart;
       event.preventDefault();
     }
+    if (event.keyCode === 46)
+      event.preventDefault();
     window.clearTimeout(timeoutHandle);
     timeoutHandle = window.setTimeout(sendPatches,500);
   }
