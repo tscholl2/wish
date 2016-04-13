@@ -42,11 +42,11 @@ document.addEventListener("newPatch", function(event){
     var p = patches[i];
     document.getElementById("input").value =
       document.getElementById("input").value.substr(0,p["1"])
-      + p["s"] +
+      + p["n"] +
       document.getElementById("input").value.substr(p["2"]);
     if (Math.max(p["1"],p["2"]) < Math.min(cursorStart,cursorEnd)) {
-      input.selectionStart = cursorStart - Math.abs(p["2"] - p["1"]) + p["s"].length;
-      input.selectionEnd = cursorEnd -  Math.abs(p["2"] - p["1"]) + p["s"].length;
+      input.selectionStart = cursorStart - Math.abs(p["2"] - p["1"]) + p["n"].length;
+      input.selectionEnd = cursorEnd -  Math.abs(p["2"] - p["1"]) + p["n"].length;
     } else if (Math.min(p["1"],p["2"]) > Math.max(cursorStart,cursorEnd)) {
       input.selectionStart = cursorStart;
       input.selectionEnd = cursorEnd;
@@ -70,7 +70,7 @@ sendPatches = function() {
       var q = patches[j];
       if (Math.min(q["1"],q["2"]) > Math.max(p["1"],p["2"]))
         continue
-      var diff = Math.abs(q["1"] - q["2"]) - q["s"].length;
+      var diff = Math.abs(q["1"] - q["2"]) - q["n"].length;
       console.log("diff = ",diff);
       p["1"] = Math.max(p["1"] - diff,0);
       p["2"] = Math.max(p["2"] - diff,0);
@@ -108,7 +108,7 @@ window.onload = function() {
     if (patches.length > 0
         && patches[patches.length-1]["1"] === input.selectionStart
         && patches[patches.length-1]["2"] === input.selectionEnd)
-        patches[patches.length-1]["s"] +=char;
+        patches[patches.length-1]["n"] +=char;
     else
       patches.push({"1":input.selectionStart,"2":input.selectionEnd,"s":char});
     event.preventDefault();

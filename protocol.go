@@ -7,22 +7,19 @@ import (
 )
 
 type message struct {
-	Type      string      `json:"t"`
-	TimeStamp time.Time   `json:"d"`
-	Payload   interface{} `json:"p"`
+	Type    string      `json:"t"`
+	Payload interface{} `json:"p"`
 }
 
 func (m *message) UnmarshalJSON(data []byte) (err error) {
 	raw := &struct {
 		T string          `json:"t"`
-		D time.Time       `json:"d"`
 		P json.RawMessage `json:"p"`
 	}{}
 	if err = json.Unmarshal(data, raw); err != nil {
 		return
 	}
 	m.Type = raw.T
-	m.TimeStamp = raw.D
 	switch raw.T {
 	case "p":
 		m.Payload = new(patchPayload)
@@ -40,21 +37,23 @@ type patchPayload struct {
 }
 
 type patch struct {
-	Start int    `json:"1"`
-	End   int    `json:"2"`
-	Text  string `json:"s"`
+	Start   int       `json:"1"`
+	End     int       `json:"2"`
+	NewText string    `json:"n"`
+	OldText string    `json:"o"`
+	Time    time.Time `json:"t"`
+	ID      string    `json:"id"`
 }
 
 type snapshotPayload struct {
-	Text string `json:"t"`
+	Timestamp string `json:"d"`
+	Text      string `json:"t"`
 }
 
 func newSnapshotMessage(s string) *message {
+	d, _ := time.Now().UTC().MarshalJSON()
 	return &message{
-		Type:      "s",
-		TimeStamp: time.Now(),
-		Payload: snapshotPayload{
-			Text: s,
-		},
+		Type:    "s",
+		Payload: snapshotPayload{string(d), s},
 	}
 }
