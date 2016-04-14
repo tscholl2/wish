@@ -1,4 +1,6 @@
-var CLIENT_AUTHOR = Date.now() +""+ Math.random()
+var CLIENT_AUTHOR = Date.now() +""+ Math.random();
+var SERVER_COPY = "";
+
 
 var conn = new WebSocket(
   "ws://" + window.location.hostname + ":" + window.location.port + "/ws/"
@@ -14,7 +16,7 @@ conn.onmessage = function(e) {
   console.log("new msg", msg);
   switch (msg.t) {
     case "p":
-      document.dispatchEvent(new CustomEvent("newPatch",{detail:{
+      document.dispatchEvent(new CustomEvent("newPatches",{detail:{
         patches: msg.p.p,
         author: msg.p.a,
       }}));
@@ -33,17 +35,15 @@ document.addEventListener("newSnapshot", function(event){
   document.getElementById("input").value = event.detail.text;;
 });
 
-document.addEventListener("newPatch", function(event){
+document.addEventListener("newPatches", function(event){
   var patches = event.detail.patches;
   var input = document.getElementById("input");
   var cursorStart = input.selectionStart;
   var cursorEnd = input.selectionEnd;
   for (var i = 0; i < patches.length; i++) {
     var p = patches[i];
-    document.getElementById("input").value =
-      document.getElementById("input").value.substr(0,p["1"])
-      + p["n"] +
-      document.getElementById("input").value.substr(p["2"]);
+    SERVER_COPY = applyPatch(SERVER_COPY,p);
+    document.getElementById("input").value = applyPatch(document.getElementById("input").value,p);
     if (Math.max(p["1"],p["2"]) < Math.min(cursorStart,cursorEnd)) {
       input.selectionStart = cursorStart - Math.abs(p["2"] - p["1"]) + p["n"].length;
       input.selectionEnd = cursorEnd -  Math.abs(p["2"] - p["1"]) + p["n"].length;
@@ -62,22 +62,6 @@ sendPatches = function() {
   if (patches.length === 0) {
     return
   }
-  /*
-  console.log("about to send patches", patches[0],patches[1]);
-  for (var i = 0; i < patches.length; i++) {
-    var p = patches[i];
-    for (var j = 0; j < i; j++) {
-      var q = patches[j];
-      if (Math.min(q["1"],q["2"]) > Math.max(p["1"],p["2"]))
-        continue
-      var diff = Math.abs(q["1"] - q["2"]) - q["n"].length;
-      console.log("diff = ",diff);
-      p["1"] = Math.max(p["1"] - diff,0);
-      p["2"] = Math.max(p["2"] - diff,0);
-    }
-  }
-  console.log("new patches", patches[0],patches[1]);
-  */
   conn.send(JSON.stringify({
     t: "p",
     d: new Date().toJSON(),
@@ -85,6 +69,10 @@ sendPatches = function() {
   }));
   patches = [];
 };
+
+applyPatch = function(s,p) {
+  return s.substr(0,p["1"]) + p["n"] + s.substr(p["2"]);
+}
 
 window.onload = function() {
   var input = document.getElementById("input");
@@ -97,7 +85,7 @@ window.onload = function() {
         patches.push({"1":input.selectionStart,"2":input.selectionEnd,"s":""});
       event.preventDefault();
     }
-    if (event.keyCode === 46)
+    if (event.keyCode === 46) // Delete
       event.preventDefault();
     window.clearTimeout(timeoutHandle);
     timeoutHandle = window.setTimeout(sendPatches,500);
@@ -106,11 +94,14 @@ window.onload = function() {
     var char = String.fromCharCode(event.which || event.keyCode || event.charCode);
     if (char === 0) { return }
     if (patches.length > 0
-        && patches[patches.length-1]["1"] === input.selectionStart
-        && patches[patches.length-1]["2"] === input.selectionEnd)
+        && patches[patches.length-1]["1"] === Math.min(input.selectionStart,input.selectionEnd)
+        && patches[patches.length-1]["2"] === Math.max(input.selectionStart,input.selectionEnd))
         patches[patches.length-1]["n"] +=char;
     else
-      patches.push({"1":input.selectionStart,"2":input.selectionEnd,"s":char});
+      patches.push({
+        "1":Math.min(input.selectionStart,input.selectionEnd),
+        "2":Math.max(input.selectionStart,input.selectionEnd),
+        "s":char});
     event.preventDefault();
     window.clearTimeout(timeoutHandle);
     timeoutHandle = window.setTimeout(sendPatches,500);
